@@ -78,6 +78,7 @@ func fetchSingleTodo(c *gin.Context) {
 
 	if todo.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
+		return
 	}
 
 	completed := false
