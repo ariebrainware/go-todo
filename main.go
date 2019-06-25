@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,6 +26,10 @@ type (
 		Completed bool   `json:"completed"`
 	}
 )
+
+func (transformedTodo) TableName() string {
+	return "todo_models"
+}
 
 func init() {
 	var err error
@@ -94,18 +99,21 @@ func fetchSingleTodo(c *gin.Context) {
 
 // updateTodo update a todo
 func updateTodo(c *gin.Context) {
-	var todo todoModel
-	todoID := c.Param("id")
-	db.First(&todo, todoID)
-	if todo.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
-		return
+	id, err := strconv.ParseUint(c.Param("id"), 0, 32)
+	if err != nil {
+		fmt.Println("Error type ID")
 	}
-
-	db.Model(&todo).Update("title", c.PostForm("title"))
-	completed, _ := strconv.Atoi(c.PostForm("completed"))
-	db.Model(&todo).Update("completed", completed)
-	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "Todo updated successfully!"})
+	com, err := strconv.ParseBool(c.PostForm("completed"))
+	if err != nil {
+		fmt.Println("Error type completed")
+	}
+	todo := transformedTodo{
+		ID:        uint(id),
+		Title:     c.PostForm("title"),
+		Completed: com,
+	}
+	err = db.Model(&todo).Update(&todo).Error
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "Todo updated successfully!", "errors": err})
 }
 
 // delete Todo remove a todo
